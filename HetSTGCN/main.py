@@ -66,114 +66,133 @@ def train_epoch(train_input, train_target, batch_size, net):
 
     return l_sum / n
 
+def plot_data(predict, real, real_len, MSE, R2, gap, data_idx, path):
+    predict = predict[::gap]
+    real = real[::gap]
+    x_index = [i for i in range(0, real_len - 1, gap)]
 
-def start_test():
+    plt.plot(x_index, predict, color='green', label='predict')
+    plt.plot(x_index, real, color='red', label='real')
+    plt.title('MSE:' + str(MSE) + '\n' + 'R2:' + str(R2))
+    plt.legend()
+    plt.margins(0)
+    plt.subplots_adjust(bottom=0.10)
+    plt.xlabel("time")
+    plt.ylabel("value")
+    if predict.max() > real.max():
+        scope_max = math.ceil(predict.max())
+    else:
+        scope_max = math.ceil(real.max())
+    if scope_max <= 0:
+        scope_max = 0
+    if predict.min() > real.min():
+        scope_min = math.floor(real.min())
+    else:
+        scope_min = math.floor(predict.min())
+    if scope_min < 0:
+        scope_min = 0
+    pyplot.yticks(np.arange(scope_min, scope_max + 6, int((scope_max + 6 - scope_min) / 4)))
+    pyplot.xticks(np.arange(0, real_len, 100))
+    plt.savefig(path + str(args.graphname) + str(data_idx + 1) + '.jpg')
+    plt.clf()
+
+
+def start_test(all_input, all_target, test_input, test_target):
     print('Start Test: ')
     with torch.no_grad():
         net.eval()
-        # 在所有数据上
-        data_input = data_input.to(device=args.device)
-        data_target = data_target.to(device=args.device)
-
-        out = net(data_input)
-        data_loss = loss_criterion(out, data_target).to(device='cpu')
-
-        out = np.squeeze(out).cpu()
-        data_target = np.squeeze(data_target).cpu()
-
-        out_result = [[] for i in range(args.data)]
-        data_result = [[] for i in range(args.data)]
 
         # 计算指标在测试集上
         test_input = test_input.to(device=args.device)
+        test_target = test_target.to(device=args.device)
+
         test_out = net(test_input)
+        test_loss = loss_criterion(test_out, test_target).to(device='cpu')
+        print('Test Data Loss: {:.4f}'.format(test_loss.detach().numpy().item()))
+
         test_out = np.squeeze(test_out).cpu()
         test_target = np.squeeze(test_target).cpu()
         
         test_out_result = [[] for i in range(args.data)]
-        test_result = [[] for i in range(args.data)]
+        test_target_result = [[] for i in range(args.data)]
+
+        # 计算指标在所有数据上
+        all_input = all_input.to(device=args.device)
+        all_target = all_target.to(device=args.device)
+
+        all_out = net(all_input)
+        all_loss = loss_criterion(all_out, all_target).to(device='cpu')
+        print('All Data Loss: {:.4f}'.format(all_loss.detach().numpy().item()))
+
+        all_out = np.squeeze(all_out).cpu()
+        all_target = np.squeeze(all_target).cpu()
+
+        all_out_result = [[] for i in range(args.data)]
+        all_target_result = [[] for i in range(args.data)]
 
         for i in range(args.data):
-            out_result[i].append(np.squeeze(np.squeeze(out[:, i:i + 1])).detach().cpu().numpy())
-            data_result[i].append(np.squeeze(np.squeeze(data_target[:, i:i + 1])).detach().cpu().numpy())
-
             test_out_result[i].append(np.squeeze(np.squeeze(test_out[:, i:i + 1])).detach().cpu().numpy())
-            test_result[i].append(np.squeeze(np.squeeze(test_target[:, i:i + 1])).detach().cpu().numpy())
+            test_target_result[i].append(np.squeeze(np.squeeze(test_target[:, i:i + 1])).detach().cpu().numpy())
 
-        MSE_SUM = []
+            all_out_result[i].append(np.squeeze(np.squeeze(all_out[:, i:i + 1])).detach().cpu().numpy())
+            all_target_result[i].append(np.squeeze(np.squeeze(all_target[:, i:i + 1])).detach().cpu().numpy())
+
+        TEST_MSE_SUM = []
+        ALL_MSE_SUM = []
         for data_idx in range(args.data):
-            data_predict = np.squeeze(out_result[data_idx])
-            data_real = np.squeeze(data_result[data_idx])
-
             test_predict = np.squeeze(test_out_result[data_idx])
-            test_real = np.squeeze(test_result)
+            test_real = np.squeeze(test_target_result[data_idx])
 
-            MSE = mean_squared_error(data_real, data_predict)
-            MSE_SUM.append(MSE)
-            RMSE = np.sqrt(MSE)
-            MAE = mean_absolute_error(data_real, data_predict)
-            R2 = r2_score(data_real, data_predict)
+            TEST_MSE = mean_squared_error(test_real, test_predict)
+            TEST_MSE_SUM.append(TEST_MSE)
+            TEST_RMSE = np.sqrt(TEST_MSE)
+            TEST_MAE = mean_absolute_error(test_real, test_predict)
+            TEST_R2 = r2_score(test_real, test_predict)
 
-            len_real = len(data_predict) + 1
+            all_predict = np.squeeze(all_out_result[data_idx])
+            all_real = np.squeeze(all_target_result[data_idx])
 
-            fo = open('{}/{}{}.txt'.format(args.graphname, args.graphname, data_idx + 1), 'w')
-            fo.write('results: ' + "Predict: " + str(data_predict) + '\n' +\
-                    "Real: " + str(data_real) + '\n' +\
-                    "MSE: " + str(MSE) + '\t' + \
-                    "RMSE: " + str(RMSE) + '\t' + \
-                    "MAE: " + str(MAE) + '\t' + \
-                    "R2: " + str(R2) + '\n')
-            fo.close()
+            ALL_MSE = mean_squared_error(all_real, all_predict)
+            ALL_MSE_SUM.append(ALL_MSE)
+            ALL_RMSE = np.sqrt(ALL_MSE)
+            ALL_MAE = mean_absolute_error(all_real, all_predict)
+            ALL_R2 = r2_score(all_real, all_predict)
 
-            fx = open('{}/{}MSE.txt'.format(args.graphname, args.graphname), "a+")
-            fx.write(str(MSE) + '\n')
-            fx.close()
+            test_real_len = len(test_predict) + 1
+            all_real_len = len(all_predict) + 1
 
-            fx = open('{}/{}RMSE.txt'.format(args.graphname, args.graphname), "a+")
-            fx.write(str(RMSE) + '\n')
-            fx.close()
+            # fo = open('{}/{}{}.txt'.format(args.graphname, args.graphname, data_idx + 1), 'w')
+            # fo.write('results: ' + "Predict: " + str(data_predict) + '\n' +\
+            #         "Real: " + str(data_real) + '\n' +\
+            #         "MSE: " + str(MSE) + '\t' + \
+            #         "RMSE: " + str(RMSE) + '\t' + \
+            #         "MAE: " + str(MAE) + '\t' + \
+            #         "R2: " + str(R2) + '\n')
+            # fo.close()
 
-            fx = open('{}/{}MAE.txt'.format(args.graphname, args.graphname), "a+")
-            fx.write(str(MAE) + '\n')
-            fx.close()
+            # fx = open('{}/{}MSE.txt'.format(args.graphname, args.graphname), "a+")
+            # fx.write(str(MSE) + '\n')
+            # fx.close()
 
-            fx = open('{}/{}R2.txt'.format(args.graphname, args.graphname), "a+")
-            fx.write(str(R2) + '\n')
-            fx.close()
+            # fx = open('{}/{}RMSE.txt'.format(args.graphname, args.graphname), "a+")
+            # fx.write(str(RMSE) + '\n')
+            # fx.close()
 
-            # list slice
-            gap = 3
-            data_predict = data_predict[::gap]
-            real = real[::gap]
-            x_index = [i for i in range(0, len_real - 1, gap)]
+            # fx = open('{}/{}MAE.txt'.format(args.graphname, args.graphname), "a+")
+            # fx.write(str(MAE) + '\n')
+            # fx.close()
 
-            plt.plot(x_index, data_predict, color='green', label='predict')
-            plt.plot(x_index, real, color='red', label='real')
-            plt.title('MSE:' + str(MSE) + '\n' + 'R2:' + str(R2))
-            plt.legend()
-            plt.margins(0)
-            plt.subplots_adjust(bottom=0.10)
-            plt.xlabel("time")
-            plt.ylabel("value")
-            # 此处设置纵坐标
-            if data_predict.max() > real.max():
-                scope_max = math.ceil(data_predict.max())
-            else:
-                scope_max = math.ceil(real.max())
-            if scope_max <= 0:
-                scope_max = 0
-            if data_predict.min() > real.min():
-                scope_min = math.floor(real.min())
-            else:
-                scope_min = math.floor(data_predict.min())
-            if scope_min < 0:
-                scope_min = 0
-            pyplot.yticks(np.arange(scope_min, scope_max + 6, int((scope_max + 6 - scope_min) / 4)))
-            pyplot.xticks(np.arange(0, len_real, 100))
-            plt.savefig('result/' + str(args.graphname) + str(data_idx + 1) + '.jpg')
-            # 画布清空
-            plt.clf()
-        print("result: ", np.mean(MSE_SUM))
+            # fx = open('{}/{}R2.txt'.format(args.graphname, args.graphname), "a+")
+            # fx.write(str(R2) + '\n')
+            # fx.close()
+
+            # 绘制测试数据的原始数值与预测数值
+            plot_data(test_predict, test_real, test_real_len, TEST_MSE, TEST_R2, 1, data_idx, 'result/test/')
+
+            # 绘制所有数据的原始数值与预测数值
+            plot_data(all_predict, all_real, all_real_len, ALL_MSE, ALL_R2, 3, data_idx, 'result/all/')
+        print('TEST MSE Mean: {}'.format(np.mean(TEST_MSE_SUM)))
+        print('ALL MSE Mean: {}'.format(np.mean(ALL_MSE_SUM)))
 
 
 
@@ -182,7 +201,7 @@ if __name__ == '__main__':
 
     A, X = load_dataset(args.graphname, args.datadir, args.dataset)
 
-    data_input, data_target = generate_dataset(X, 
+    all_input, all_target = generate_dataset(X, 
                                     num_timesteps_input, num_timesteps_output)
 
     split_line1 = int(X.shape[2] * 0.7)
@@ -252,23 +271,7 @@ if __name__ == '__main__':
     print('Loading {}th epoch'.format(best_epoch))
     net.load_state_dict(torch.load('{}{}.pkl'.format(train_path, best_epoch)))
     
-    # print("Start Test: ")
-    # with torch.no_grad():
-    #     net.eval()
-
-    #     test_input = test_input.to(device=args.device)
-    #     test_target = test_target.to(device=args.device)
-
-    #     out = net(test_input)
-    #     test_loss = loss_criterion(out, test_target).to(device='cpu')
-
-    #     out = np.squeeze(out).cpu()
-    #     test_target = np.squeeze(test_target).cpu()
-
-    #     out_result = [[] for i in range(args.data)]
-    #     test_result = [[] for i in range(args.data)]
-
-    #     test_input
+    start_test(all_input, all_target, test_input, test_target)
 
 
 

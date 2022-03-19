@@ -3,17 +3,32 @@ import torch
 import math
 import torch.nn.functional as F
 
-class TimeBlock(nn.Module):
+class TemporalConv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3):
-        super(TimeBlock, self).__init__()
+        super(TemporalConv, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, (1, kernel_size))
         self.conv2 = nn.Conv2d(in_channels, out_channels, (1, kernel_size))
         self.conv3 = nn.Conv2d(in_channels, out_channels, (1, kernel_size))
 
+        # GLU
+        self.casual_conv = nn.Conv2d(in_channels, 2 * out_channels, (1, kernel_size))
+        self.out_channels = out_channels
+        self.sigmoid = nn.Sigmoid()
+
     def forward(self, X):
-        X = X.permute(0, 3, 1, 2)
-        temp = self.conv1(X) + torch.sigmoid(self.conv2(X))
-        out = F.relu(temp + self.conv3(X))
+        X = X.permute(0, 3, 1, 2) # (n组数据, 通道数, 节点数，时间长度？)
+
+        # RELU
+        # temp = self.conv1(X) + torch.sigmoid(self.conv2(X))
+        # out = F.relu(temp + self.conv3(X))
+
+        # GLU
+        x_causal_conv = self.casual_conv(X)
+        temp = self.conv1(X) # TODO: 残差连接应该怎么搞？？
+        x_p = x_causal_conv[:, :self.out_channels, :, :]
+        x_q = x_causal_conv[:, -self.out_channels:, :, :]
+        out = torch.mul((x_p + temp), self.sigmoid(x_q))
+
         out = out.permute(0, 2, 3, 1)
         return out
 
@@ -22,9 +37,9 @@ class HetSTGCNBlock(nn.Module):
     def __init__(self, A_wave, in_channels, spatial_channels, out_channels, num_nodes):
         super(HetSTGCNBlock, self).__init__()
         self.A_wave = A_wave
-        self.temporal1 = TimeBlock(in_channels=in_channels, out_channels=out_channels)
+        self.temporal1 = TemporalConv(in_channels=in_channels, out_channels=out_channels)
         self.Theta1 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-        self.temporal2 = TimeBlock(in_channels=spatial_channels, out_channels=out_channels)
+        self.temporal2 = TemporalConv(in_channels=spatial_channels, out_channels=out_channels)
         self.batch_norm = nn.BatchNorm2d(num_nodes) # TODO: what is it ?
         self.reset_parameters() # TODO: what is it?
 
@@ -53,7 +68,7 @@ class HetSTGCN(nn.Module):
         self.block2 = HetSTGCNBlock(A_wave=A_wave, in_channels=64, out_channels=64,
                                     spatial_channels=16, num_nodes=num_nodes)
         # 这里为什么需要last_temporal
-        self.last_temporal = TimeBlock(in_channels=64, out_channels=64)
+        self.last_temporal = TemporalConv(in_channels=64, out_channels=64)
         self.fully = nn.Linear((num_timesteps_input - 2 * 5) * 64, num_timesteps_output)
     
     def forward(self, X):
