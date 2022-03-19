@@ -199,7 +199,7 @@ def start_test(all_input, all_target, test_input, test_target):
 if __name__ == '__main__':
     torch.manual_seed(7) # 具体是多少比较合适？
 
-    A, X = load_dataset(args.graphname, args.datadir, args.dataset)
+    A, X, As = load_dataset(args.graphname, args.datadir, args.dataset)
 
     all_input, all_target = generate_dataset(X, 
                                     num_timesteps_input, num_timesteps_output)
@@ -220,7 +220,7 @@ if __name__ == '__main__':
     A_wave = get_normalized_adj(A_wave)
     A_wave = torch.from_numpy(A_wave)
 
-    net = HetSTGCN(A_wave.shape[0], A_wave, train_input.shape[3],
+    net = HetSTGCN(A_wave.shape[0], A_wave, As, train_input.shape[3],
                     num_timesteps_input, num_timesteps_output).to(device=args.device)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
     loss_criterion = nn.MSELoss()

@@ -17,7 +17,64 @@ def get_adj(graph_path):
     return adj_mat
 
 
+def get_het_adj(graph_path):
+    # Heterogeneous Graph
+    # 两种类型 oil and water well
+    # 1-81: oil well; 82-132 water well
+    graph_file = open(graph_path, 'r', encoding='utf-8')
+    oil_num = 81
+    water_num = 51
+    A_00 = np.zeros((oil_num, oil_num))
+    A_01 = np.zeros((oil_num, water_num))
+    A_10 = np.zeros((water_num, oil_num))
+    A_11 = np.zeros((water_num, water_num))
+
+    for line in graph_file.readlines():
+        x = int(line.split('\t')[0])
+        y = int(line.split('\t')[1])
+        if x <= 81:
+            if y <= 81:
+                A_00[x - 1][y - 1] = 1
+            else:
+                A_01[x - 1][y - 82] = 1
+        else:
+            if y <= 81:
+                A_10[x - 82][y - 1] = 1
+            else:
+                A_11[x - 82][y - 82] = 1
+    A_00_0 = A_00
+    A_00_1 = A_00
+    for i in range(81):
+        for j in range(81):
+            if i < j:
+                A_00_1[i][j] = 0
+            else:
+                A_00_0[i][j] = 0
+    
+    A_11_0 = A_11
+    A_11_1 = A_11
+    for i in range(51):
+        for j in range(51):
+            if i < j:
+                A_11_1[i][j] = 0
+            else:
+                A_11_0[i][j] = 0
+
+    A_00_0 = torch.from_numpy(get_het_normalized_adj(A_00_0))
+    A_00_1 = torch.from_numpy(get_het_normalized_adj(A_00_1))
+    A_01 = torch.from_numpy(get_het_normalized_adj(A_01))
+    A_10 = torch.from_numpy(get_het_normalized_adj(A_10))
+    A_11_0 = torch.from_numpy(get_het_normalized_adj(A_11_0))
+    A_11_1 = torch.from_numpy(get_het_normalized_adj(A_11_1))
+
+    
+    return [A_00_0, A_00_1, A_01, A_10, A_11_0, A_11_1]
+
+
 def load_dataset(graph_name, datadir, dataset):
+    # Heterogeneous
+    As = get_het_adj('data/graph.cites.' + graph_name)
+
     adj_mat = get_adj('data/graph.cites.' + graph_name)
 
     print('Loading {} dataset...'.format(dataset))
@@ -38,7 +95,7 @@ def load_dataset(graph_name, datadir, dataset):
         i += 1
     X = X.transpose(0, 2, 1) # X.shape = (132, 1, 945)
 
-    return adj_mat, X
+    return adj_mat, X, As
 
 
 def generate_dataset(X, num_timesteps_input, num_timesteps_output):
@@ -61,4 +118,16 @@ def get_normalized_adj(A):
     diag = np.reciprocal(np.sqrt(D))
     A_wave = np.multiply(np.multiply(diag.reshape((-1, 1)), A),
                         diag.reshape((1, -1)))
+    return A_wave
+
+def get_het_normalized_adj(A):
+    Di = np.array(np.sum(A, axis=1)).reshape((-1,))
+    Dj = np.array(np.sum(A, axis=0)).reshape((-1,))
+    Di[Di <= 10e-5] = 10e-5
+    Dj[Dj <= 10e-5] = 10e-5
+    Dis = np.reciprocal(np.sqrt(Di))
+    Djs = np.reciprocal(np.sqrt(Dj))
+    A_wave = np.multiply(np.multiply(Dis.reshape((-1, 1)), A),
+                        Djs.reshape((1, -1)))
+
     return A_wave
