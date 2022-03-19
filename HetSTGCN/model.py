@@ -38,25 +38,48 @@ class HetSTGCNBlock(nn.Module):
         super(HetSTGCNBlock, self).__init__()
         self.A_wave = A_wave
         self.temporal1 = TemporalConv(in_channels=in_channels, out_channels=out_channels)
-        self.Theta1 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
+        # self.Theta1 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
         self.temporal2 = TemporalConv(in_channels=spatial_channels, out_channels=out_channels)
         self.batch_norm = nn.BatchNorm2d(num_nodes) # TODO: what is it ?
+
+        # 2层卷积层
+        self.Theta2 = nn.Parameter(torch.FloatTensor(out_channels, out_channels))
+        self.Theta3 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
+
         self.reset_parameters() # TODO: what is it?
 
     def reset_parameters(self):
-        stdv = 1. / math.sqrt(self.Theta1.shape[1])
-        self.Theta1.data.uniform_(-stdv, stdv)
+        # stdv = 1. / math.sqrt(self.Theta1.shape[1])
+        # self.Theta1.data.uniform_(-stdv, stdv)
+
+        stdv = 1. / math.sqrt(self.Theta2.shape[1])
+        self.Theta2.data.uniform_(-stdv, stdv)
+
+        stdv = 1. / math.sqrt(self.Theta3.shape[1])
+        self.Theta3.data.uniform_(-stdv, stdv)
 
     def forward(self, X):
         X = X.type(torch.FloatTensor).cuda()
         t = self.temporal1(X)
 
         A_hat = torch.tensor(self.A_wave, dtype=torch.float32).cuda()
-        lfs = torch.einsum("ij,jklm->kilm", [A_hat, t.permute(1, 0, 2, 3)]) # TODO: what is it?   
-        t2 = F.relu(torch.matmul(lfs, self.Theta1)) # TODO: what is it?
 
-        t3 = self.temporal2(t2)
-        return self.batch_norm(t3) # TODO: Why?
+        # 1层卷积层
+        # lfs = torch.einsum("ij,jklm->kilm", [A_hat, t.permute(1, 0, 2, 3)]) # TODO: what is it?   
+        # t2 = F.relu(torch.matmul(lfs, self.Theta1)) # TODO: what is it?
+
+        # t3 = self.temporal2(t2)
+        # return self.batch_norm(t3) # TODO: Why?
+
+        # 2层卷积层
+        lfs = torch.einsum("ij,jklm->kilm", [A_hat, t.permute(1, 0, 2, 3)]) # TODO: what is it?   
+        t2 = F.relu(torch.matmul(lfs, self.Theta2)) # TODO: what is it?
+
+        lfs = torch.einsum("ij,jklm->kilm", [A_hat, t2.permute(1, 0, 2, 3)]) # TODO: what is it?   
+        t3 = F.relu(torch.matmul(lfs, self.Theta3)) # TODO: what is it?
+
+        t4 = self.temporal2(t3)
+        return self.batch_norm(t4) # TODO: Why?
 
 
 class HetSTGCN(nn.Module):
