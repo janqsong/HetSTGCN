@@ -66,9 +66,11 @@ def get_het_adj(graph_path):
     A_10 = torch.from_numpy(get_het_normalized_adj(A_10))
     A_11_0 = torch.from_numpy(get_het_normalized_adj(A_11_0))
     A_11_1 = torch.from_numpy(get_het_normalized_adj(A_11_1))
+    A_00 = torch.from_numpy(get_normalized_adj(A_00))
+    A_11 = torch.from_numpy(get_normalized_adj(A_11))
 
     
-    return [A_00_0, A_00_1, A_01, A_10, A_11_0, A_11_1]
+    return [A_00_0, A_00_1, A_01, A_10, A_11_0, A_11_1, A_00, A_11]
 
 
 def load_dataset(graph_name, datadir, dataset):

@@ -119,21 +119,24 @@ class HetSTGCNBlock(nn.Module):
         # return self.batch_norm(t4) # TODO: Why?
 
         # Heterogeneous Graph
-
         A_00_0 = torch.tensor(self.As[0], dtype=torch.float32).cuda()
         A_00_1 = torch.tensor(self.As[1], dtype=torch.float32).cuda()
         A_01 = torch.tensor(self.As[2], dtype=torch.float32).cuda()
         A_10 = torch.tensor(self.As[3], dtype=torch.float32).cuda()
         A_11_0 = torch.tensor(self.As[4], dtype=torch.float32).cuda()
         A_11_1 = torch.tensor(self.As[5], dtype=torch.float32).cuda()
+        A_00 = torch.tensor(self.As[6], dtype=torch.float32).cuda()
+        A_11 = torch.tensor(self.As[7], dtype=torch.float32).cuda()
         
 
         X0 = t[:, :81, :, :]
         X1 = t[:, 81:, :, :]
         # oil
-        u1 = torch.einsum("ij,jklm->kilm", [torch.mm(A_00_0, A_00_1), X0.permute(1, 0, 2, 3)])
-        u2 = torch.einsum("ij,jklm->kilm", [A_00_0, X0.permute(1, 0, 2, 3)])
-        u3 = torch.relu(torch.matmul(u1, self.theta1) + torch.matmul(u2, self.theta2))
+        # u1 = torch.einsum("ij,jklm->kilm", [torch.mm(A_00_0, A_00_1), X0.permute(1, 0, 2, 3)])
+        # u2 = torch.einsum("ij,jklm->kilm", [A_00_0, X0.permute(1, 0, 2, 3)])
+        # u3 = torch.relu(torch.matmul(u1, self.theta1) + torch.matmul(u2, self.theta2))
+        u1 = torch.einsum("ij,jklm->kilm", [A_00, X0.permute(1, 0, 2, 3)])
+        u3 = F.relu(torch.matmul(u1, self.theta1))
 
         u4 = torch.einsum("ij,jklm->kilm", [torch.mm(A_01, A_10), X0.permute(1, 0, 2, 3)])
         u5 = torch.einsum("ij,jklm->kilm", [A_01, X1.permute(1, 0, 2, 3)])
@@ -141,9 +144,12 @@ class HetSTGCNBlock(nn.Module):
         u7 = torch.relu(u3 + u6) / 2
 
         # water
-        v1 = torch.einsum("ij,jklm->kilm", [torch.mm(A_11_0, A_11_1), X1.permute(1, 0, 2, 3)])
-        v2 = torch.einsum("ij,jklm->kilm", [A_11_0, X1.permute(1, 0, 2, 3)])
-        v3 = torch.relu(torch.matmul(v1, self.theta5) + torch.matmul(v2, self.theta6))
+        # v1 = torch.einsum("ij,jklm->kilm", [torch.mm(A_11_0, A_11_1), X1.permute(1, 0, 2, 3)])
+        # v2 = torch.einsum("ij,jklm->kilm", [A_11_0, X1.permute(1, 0, 2, 3)])
+        # v3 = torch.relu(torch.matmul(v1, self.theta5) + torch.matmul(v2, self.theta6))
+        v1 = torch.einsum("ij,jklm->kilm", [A_11, X1.permute(1, 0, 2, 3)])
+        v3 = F.relu(torch.matmul(v1, self.theta5))
+
 
         v4 = torch.einsum("ij,jklm->kilm", [torch.mm(A_10, A_01), X1.permute(1, 0, 2, 3)])
         v5 = torch.einsum("ij,jklm->kilm", [A_10, X0.permute(1, 0, 2, 3)])
