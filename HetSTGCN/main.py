@@ -20,7 +20,7 @@ from model import HetSTGCN
 num_timesteps_input = 20
 num_timesteps_output = 1
 
-patience = 100
+patience = 20
 batch_size = 1
 
 parser = argparse.ArgumentParser(description="HetSTGCN")
