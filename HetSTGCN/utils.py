@@ -32,45 +32,26 @@ def get_het_adj(graph_path):
     for line in graph_file.readlines():
         x = int(line.split('\t')[0])
         y = int(line.split('\t')[1])
+        # 加入距离特征
+        dis = float(line.split('\t')[2])
         if x <= 81:
             if y <= 81:
-                A_00[x - 1][y - 1] = 1
+                A_00[x - 1][y - 1] = dis
             else:
-                A_01[x - 1][y - 82] = 1
+                A_01[x - 1][y - 82] = dis
         else:
             if y <= 81:
-                A_10[x - 82][y - 1] = 1
+                A_10[x - 82][y - 1] = dis
             else:
-                A_11[x - 82][y - 82] = 1
-    A_00_0 = A_00
-    A_00_1 = A_00
-    for i in range(81):
-        for j in range(81):
-            if i < j:
-                A_00_1[i][j] = 0
-            else:
-                A_00_0[i][j] = 0
-    
-    A_11_0 = A_11
-    A_11_1 = A_11
-    for i in range(51):
-        for j in range(51):
-            if i < j:
-                A_11_1[i][j] = 0
-            else:
-                A_11_0[i][j] = 0
+                A_11[x - 82][y - 82] = dis
 
-    A_00_0 = torch.from_numpy(get_het_normalized_adj(A_00_0))
-    A_00_1 = torch.from_numpy(get_het_normalized_adj(A_00_1))
-    A_01 = torch.from_numpy(get_het_normalized_adj(A_01))
-    A_10 = torch.from_numpy(get_het_normalized_adj(A_10))
-    A_11_0 = torch.from_numpy(get_het_normalized_adj(A_11_0))
-    A_11_1 = torch.from_numpy(get_het_normalized_adj(A_11_1))
-    A_00 = torch.from_numpy(get_normalized_adj(A_00))
-    A_11 = torch.from_numpy(get_normalized_adj(A_11))
+    A_00 = get_normalized_adj(A_00)
+    A_01 = get_het_normalized_adj(A_01)
+    A_10 = get_het_normalized_adj(A_10)
+    A_11 = get_normalized_adj(A_11)
 
     
-    return [A_00_0, A_00_1, A_01, A_10, A_11_0, A_11_1, A_00, A_11]
+    return [A_00, A_01, A_10, A_11]
 
 
 def load_dataset(graph_name, datadir, dataset):

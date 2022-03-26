@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description="HetSTGCN")
 parser.add_argument('--enable-cuda', action='store_true')
 parser.add_argument('--datadir', type=str, default='./data/')
 parser.add_argument('--dataset', type=str, default='STGCN163-1')
-parser.add_argument('--graphname', type=str, default='distance')
+parser.add_argument('--graphname', type=str, default='radiate2')
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--data', type=int, default=132)
@@ -193,6 +193,7 @@ def start_test(all_input, all_target, test_input, test_target):
             plot_data(all_predict, all_real, all_real_len, ALL_MSE, ALL_R2, 3, data_idx, 'result/all/')
         print('TEST MSE Mean: {}'.format(np.mean(TEST_MSE_SUM)))
         print('ALL MSE Mean: {}'.format(np.mean(ALL_MSE_SUM)))
+        print('AlLL R2: {}'.format(ALL_R2))
 
 
 

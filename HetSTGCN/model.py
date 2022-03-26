@@ -68,54 +68,9 @@ class TemporalConv(nn.Module):
 #         # self.Theta2 = nn.Parameter(torch.FloatTensor(out_channels, out_channels))
 #         # self.Theta3 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
 
-#         # Heterogeneous Graph
-#         self.theta1 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-#         self.theta2 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-#         self.theta3 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-#         self.theta4 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-
-#         self.theta5 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-#         self.theta6 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-#         self.theta7 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-#         self.theta8 = nn.Parameter(torch.FloatTensor(out_channels, spatial_channels))
-
 #         self.conv1 = GraphConvolution(A_00, out_channels, spatial_channels)
 
 #         self.reset_parameters() # TODO: what is it?
-
-#     def reset_parameters(self):
-#         # stdv = 1. / math.sqrt(self.Theta1.shape[1])
-#         # self.Theta1.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.Theta2.shape[1])
-#         # self.Theta2.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.Theta3.shape[1])
-#         # self.Theta3.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta1.shape[1])
-#         # self.theta1.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta2.shape[1])
-#         # self.theta2.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta3.shape[1])
-#         # self.theta3.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta4.shape[1])
-#         # self.theta4.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta5.shape[1])
-#         # self.theta5.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta6.shape[1])
-#         # self.theta6.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta7.shape[1])
-#         # self.theta7.data.uniform_(-stdv, stdv)
-
-#         # stdv = 1. / math.sqrt(self.theta8.shape[1])
-#         # self.theta8.data.uniform_(-stdv, stdv)
 
 #     def forward(self, X):
 #         X = X.type(torch.FloatTensor).cuda()
@@ -129,58 +84,7 @@ class TemporalConv(nn.Module):
 #         # t2 = F.relu(torch.matmul(lfs, self.Theta1)) # TODO: what is it?
 
 #         # t3 = self.temporal2(t2)
-#         # return self.batch_norm(t3) # TODO: Why?
-
-#         # 2层卷积层
-#         # lfs = torch.einsum("ij,jklm->kilm", [A_hat, t.permute(1, 0, 2, 3)]) # TODO: what is it?   
-#         # t2 = F.relu(torch.matmul(lfs, self.Theta2)) # TODO: what is it?
-
-#         # lfs = torch.einsum("ij,jklm->kilm", [A_hat, t2.permute(1, 0, 2, 3)]) # TODO: what is it?   
-#         # t3 = F.relu(torch.matmul(lfs, self.Theta3)) # TODO: what is it?
-
-#         # t4 = self.temporal2(t3)
-#         # return self.batch_norm(t4) # TODO: Why?
-
-#         # Heterogeneous Graph
-#         A_00_0 = torch.tensor(self.As[0], dtype=torch.float32).cuda()
-#         A_00_1 = torch.tensor(self.As[1], dtype=torch.float32).cuda()
-#         A_01 = torch.tensor(self.As[2], dtype=torch.float32).cuda()
-#         A_10 = torch.tensor(self.As[3], dtype=torch.float32).cuda()
-#         A_11_0 = torch.tensor(self.As[4], dtype=torch.float32).cuda()
-#         A_11_1 = torch.tensor(self.As[5], dtype=torch.float32).cuda()
-#         A_00 = torch.tensor(self.As[6], dtype=torch.float32).cuda()
-#         A_11 = torch.tensor(self.As[7], dtype=torch.float32).cuda()
-        
-
-#         X0 = t[:, :81, :, :]
-#         X1 = t[:, 81:, :, :]
-#         # # oil
-#         # # u1 = torch.einsum("ij,jklm->kilm", [torch.mm(A_00_0, A_00_1), X0.permute(1, 0, 2, 3)])
-#         # # u2 = torch.einsum("ij,jklm->kilm", [A_00_0, X0.permute(1, 0, 2, 3)])
-#         # # u3 = torch.relu(torch.matmul(u1, self.theta1) + torch.matmul(u2, self.theta2))
-#         # u1 = torch.einsum("ij,jklm->kilm", [A_00, X0.permute(1, 0, 2, 3)])
-#         # u3 = F.relu(torch.matmul(u1, self.theta1))
-
-#         # u4 = torch.einsum("ij,jklm->kilm", [torch.mm(A_01, A_10), X0.permute(1, 0, 2, 3)])
-#         # u5 = torch.einsum("ij,jklm->kilm", [A_01, X1.permute(1, 0, 2, 3)])
-#         # u6 = torch.sigmoid(torch.matmul(u4, self.theta3) + torch.matmul(u5, self.theta4))
-#         # u7 = torch.relu(u3 + u6) / 2
-
-#         # # water
-#         # # v1 = torch.einsum("ij,jklm->kilm", [torch.mm(A_11_0, A_11_1), X1.permute(1, 0, 2, 3)])
-#         # # v2 = torch.einsum("ij,jklm->kilm", [A_11_0, X1.permute(1, 0, 2, 3)])
-#         # # v3 = torch.relu(torch.matmul(v1, self.theta5) + torch.matmul(v2, self.theta6))
-#         # v1 = torch.einsum("ij,jklm->kilm", [A_11, X1.permute(1, 0, 2, 3)])
-#         # v3 = F.relu(torch.matmul(v1, self.theta5))
-
-
-#         # v4 = torch.einsum("ij,jklm->kilm", [torch.mm(A_10, A_01), X1.permute(1, 0, 2, 3)])
-#         # v5 = torch.einsum("ij,jklm->kilm", [A_10, X0.permute(1, 0, 2, 3)])
-#         # v6 = torch.sigmoid(torch.matmul(v4, self.theta7) + torch.matmul(v5, self.theta8))
-#         # v7 = torch.relu(v3 + v6) / 2
-
-#         # tk = torch.cat((u7, v7), 1)
-#         # tk1 = self.temporal2(tk)
+#         # return self.batch_norm(t3) # TODO: Why
 
 #         # return self.batch_norm(tk1)
         
@@ -234,23 +138,22 @@ class HetSTGCNBlock(nn.Module):
     def __init__(self, A_wave, As, in_channels, spatial_channels, out_channels, num_nodes):
         super(HetSTGCNBlock, self).__init__()
         self.A_wave = A_wave
-        self.As = As
-        self.A_01 = torch.tensor(self.As[2], dtype=torch.float32).cuda()
-        self.A_10 = torch.tensor(self.As[3], dtype=torch.float32).cuda()
-        self.A_00 = torch.tensor(self.As[6], dtype=torch.float32).cuda()
-        self.A_11 = torch.tensor(self.As[7], dtype=torch.float32).cuda()
+        self.A00 = torch.tensor(torch.from_numpy(As[0]), dtype=torch.float32).cuda()
+        self.A01 = torch.tensor(torch.from_numpy(As[1]), dtype=torch.float32).cuda()
+        self.A10 = torch.tensor(torch.from_numpy(As[2]), dtype=torch.float32).cuda()
+        self.A11 = torch.tensor(torch.from_numpy(As[3]), dtype=torch.float32).cuda()
 
         self.temporal1 = TemporalConv(in_channels=in_channels, out_channels=out_channels)
         self.temporal2 = TemporalConv(in_channels=spatial_channels, out_channels=out_channels)
         self.batch_norm = nn.BatchNorm2d(num_nodes) # TODO: what is it ?
 
-        self.layers = 6
+        self.layers = 5
         self.convs1 = nn.ModuleList()
         for _ in range(self.layers): # 6层
-            self.convs1.append(HetGraphConvolution(self.A_00, self.A_01, self.A_10, out_channels, out_channels))
+            self.convs1.append(HetGraphConvolution(self.A00, self.A01, self.A10, out_channels, out_channels))
         self.convs2 = nn.ModuleList()
         for _ in range(self.layers):
-            self.convs2.append(HetGraphConvolution(self.A_11, self.A_10, self.A_01, out_channels, out_channels))
+            self.convs2.append(HetGraphConvolution(self.A11, self.A10, self.A01, out_channels, out_channels))
 
         self.act_fn = nn.ReLU()
 
@@ -289,8 +192,9 @@ class HetSTGCN(nn.Module):
                                     spatial_channels=16, num_nodes=num_nodes)
         self.block2 = HetSTGCNBlock(A_wave=A_wave, As=As, in_channels=64, out_channels=64,
                                     spatial_channels=16, num_nodes=num_nodes)
-        # 这里为什么需要last_temporal
+        # TODO: 这里为什么额外的last_temporal
         self.last_temporal = TemporalConv(in_channels=64, out_channels=64)
+        # TODO: 这里为什么不能是num_timesteps_input - 2 * 4（这里的4和5应该是指经过几次时域卷积）
         self.fully = nn.Linear((num_timesteps_input - 2 * 5) * 64, num_timesteps_output)
     
     def forward(self, X):
